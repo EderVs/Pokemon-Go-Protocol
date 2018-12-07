@@ -43,13 +43,43 @@ def connect_to_server(sock):
     data += get_code_bytes(id_trainer)
     sock.send(data)
 
+
 def capturar_pokemon(sock):
     response = sock.recv(2)
     print(response)
     if response[0] != SERVER_CAPTURE:
-        return {}
+        return None
     pokemon = get_pokemon(response[1])
-    return pokemon
+    capturar_pokemon_ = str(input("Capturar a", pokemon.get('name', ''), "?")) == 'si'
+    if not capturar_pokemon:
+        data = get_code_bytes(BOTH_NO)
+        print("Nos vemos entrenador!")
+        sock.send(data)
+        return None
+    data = get_code_bytes(BOTH_YES)
+    sock.send(data)
+    response = sock.recv(3)
+    while response[0] == SERVER_CAPTURE_AGAIN:
+        print("No pudiste capturar a" , pokemon.get('name', ''))
+        capturar_pokemon_ = str(input("Seguir capturando a", pokemon.get('name', ''), "?")) == 'si'
+        if not capturar_pokemon:
+            data = get_code_bytes(BOTH_NO)
+            print("Nos vemos entrenador!")
+            sock.send(data)
+            return None
+        data = get_code_bytes(BOTH_YES)
+        sock.send(data)
+        response = sock.recv(3)
+    if response[0] == SERVER_SEND_POKEMON:
+        print(pokemon.get('name', ''), "capturado!")
+    elif response[0] == SERVER_RUN_OUT_ATTEMPTS:
+        print("Se acabaron los Intentos :(")
+        print("Nos vemos entrenador!")
+    else:
+        print("Sucedió un error :(")
+    sock.close()
+    return None
+
 
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
