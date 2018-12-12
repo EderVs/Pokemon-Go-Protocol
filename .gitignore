@@ -105,3 +105,6 @@ venv.bak/
 
 # VIM
 *.swp
+
+# Pokemon images of client
+/Pokemon-Go-Protocol-master/client_pokemons/*.jpg

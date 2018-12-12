@@ -35,8 +35,11 @@ def get_code_bytes(code):
     return bytes([code])
 
 
-def get_code_from_bytes(code_b):
-    return int.from_bytes(code_b)
+def bytes_to_int(bytes):
+    result = 0
+    for b in bytes:
+        result = result * 256 + int(b)
+    return result
 
 
 def get_pokemon(pokemon_id):
@@ -70,8 +73,8 @@ def capturar_pokemon(sock):
     response = sock.recv(3)
     while response[0] == SERVER_CAPTURE_AGAIN:
         print("No pudiste capturar a" , pokemon.get('name', ''), ".")
-        print("Te queda(n)", (numAttemps+1) - response[1], "intento(s).\n")
-        quiere_pokemon = str(input("¿Quieres intentar capturar a " + pokemon.get('name', '') + " de nuevo?"))
+        print("Te queda(n)", response[2], "intento(s).\n")
+        quiere_pokemon = str(input("¿Quieres intentar capturar a " + pokemon.get('name', '') + " de nuevo? "))
         capturar_pokemon_ = quiere_pokemon == 'si' #30
         if not capturar_pokemon:
             data = get_code_bytes(BOTH_NO)
@@ -79,11 +82,19 @@ def capturar_pokemon(sock):
             sock.send(data)
             return None
         data = get_code_bytes(BOTH_YES)
-        data += get_code_bytes(response[1])
         sock.send(data)
         response = sock.recv(3)
     if response[0] == SERVER_SEND_POKEMON:
-        print(pokemon.get('name', ''), "capturado!")
+        print("!"+pokemon.get('name', ''), "capturado!")
+        # Gets the size of the file
+        size = bytes_to_int(response[2:3] + sock.recv(3))
+        # Receives the file bytes
+        image_bytes = sock.recv(size)
+        # Writes the file
+        out_file = open("client_pokemons/" + pokemon['name'] + ".jpg", "wb")
+        out_file.write(image_bytes)
+        out_file.close()
+        print("Se guardó tu pokemon en: client_pokemons/" + pokemon['name'] + ".jpg")
     elif response[0] == SERVER_RUN_OUT_ATTEMPTS:
         print("Se acabaron los Intentos :(")
         print("¡Nos vemos entrenador!")

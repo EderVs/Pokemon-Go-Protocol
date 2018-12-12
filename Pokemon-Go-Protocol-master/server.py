@@ -2,6 +2,7 @@
     Pokemon Go Protocol Server
 """
 
+import os
 import socket
 import threading
 from random import randint
@@ -76,6 +77,32 @@ class ThreadServer(object):
             client.send(get_code_bytes(ERROR_WRONG_CODE))
         return trainer
 
+    
+    def image_size_to_bytes(self, size):
+        b_array = []
+        while size >= 256:
+            b_array.append(size % 256)
+            size = size // 256
+        b_array.append(size)
+        b_array.reverse()
+        b = b''
+        for i in range(4-len(b_array)):
+            b += b'\x00'
+        b += bytes(b_array)
+        return b
+        
+
+    def data_to_send_pokemon(self, pokemon):
+        path = "pokemons/" + pokemon["name"] + ".jpg"
+        data = get_code_bytes(SERVER_SEND_POKEMON)
+        data += get_code_bytes(pokemon['id'])
+        size = os.path.getsize(path)
+        f = open(path, "rb") 
+        data += self.image_size_to_bytes(size)
+        data += f.read()
+        f.close()
+        return data
+
 
     def capture_pokemon(self, client, address):
         pokemon_to_capture = pokemons[randint(1, len((pokemons.keys())))]
@@ -84,18 +111,22 @@ class ThreadServer(object):
         data += get_code_bytes(pokemon_to_capture.get('id', -1))
         client.send(data)
         response = client.recv(2)
-        while response[0] == BOTH_YES and response[1] < numAttemps :
+        actual_num_attemps = numAttemps
+        while response[0] == BOTH_YES and actual_num_attemps > 0 :
+            # Get in a random way if the pokemon is captured
             catch_pokemon = randint(0,100)
-            if catch_pokemon < 30:
-                data = get_code_bytes(SERVER_SEND_POKEMON) #22
-                # data += pokemon_to_capute[image]
-                # data +=(len(pokemon_to_capute[image]))
+            if True or catch_pokemon < 30: 
+                # Gets the data to send when the client captures a pokemon
+                data = self.data_to_send_pokemon(pokemon_to_capture)
                 client.send(data)
-                pokemon = get_pokemon(pokemon_to_capture.get('id', -1))
-                return pokemon
+                return pokemon_to_capture
+            actual_num_attemps -= 1
+            # We check if we are running out of attemps to capture
+            if actual_num_attemps <= 0:
+                break
             data = get_code_bytes(SERVER_CAPTURE_AGAIN)
-            data += get_code_bytes(response[1] + 1)
             data += get_code_bytes(pokemon_to_capture.get('id', -1))
+            data += get_code_bytes(actual_num_attemps)
             client.send(data)  #21
             response = client.recv(2)
         if response[0] == BOTH_YES:
@@ -119,7 +150,7 @@ class ThreadServer(object):
             return False
         pokemon = self.capture_pokemon(client, address)
         if pokemon != {}:
-            print("Se capturó!: ",pokemon)
+            print("!Se capturó!: ", pokemon)
             trainer['pokemons'].append(pokemon)
             print("Pokemones de",trainer['name'],": ",trainer['pokemons'])
         client.close()
