@@ -29,7 +29,8 @@ BOTH_NO = 31
 BOTH_FINISH = 32
 ERROR_WRONG_CODE = 40
 ERROR_WRONG_TRAINER = 41
-numAttemps = 3
+ERROR_CONNECTION_CLOSED = 42
+
 
 def get_code_bytes(code):
     return bytes([code])
@@ -52,17 +53,30 @@ def connect_to_server(sock):
     id_trainer = int(input('¿Qué entrenador eres?:'))
     data += get_code_bytes(id_trainer)
     sock.send(data)
-    trainer = trainers[id_trainer]
-    print("¡Bienvenido",trainer['name'],"!")
+    return trainers.get(id_trainer, {})
+
+
+def check_if_the_connection_is_closed(code):
+    return code == ERROR_CONNECTION_CLOSED
     
-def capturar_pokemon(sock):
+    
+def capturar_pokemon(sock, trainer):
     response = sock.recv(2)
     if response[0] != SERVER_CAPTURE: #code 20
+        if check_if_the_connection_is_closed(response[0]):
+            print("El servidor cerró la conexión")
+        elif response[0] == ERROR_WRONG_TRAINER:
+            print("El entrenador que ingresaste no existe")
+        else:
+            print("Sucedió un error :(")
         return None
+
+    # Ya que se pasó el filtro de los posibles errores damos la bienvenida
+    print("¡Bienvenido", trainer['name'],"!")
+
     pokemon = get_pokemon(response[1])
-    quiere_pokemon = str(input("¿Quieres capturar a " + pokemon.get('name', '') + "? "))
-    capturar_pokemon = quiere_pokemon == "si"
-    if not capturar_pokemon:
+    quiere_pokemon = 'si' ==  str(input("¿Quieres capturar a " + pokemon.get('name', '') + "? "))
+    if not quiere_pokemon:
         data = get_code_bytes(BOTH_NO)
         print("¡Nos vemos entrenador!")
         sock.send(data)
@@ -72,14 +86,14 @@ def capturar_pokemon(sock):
     sock.send(data)
     response = sock.recv(3)
     while response[0] == SERVER_CAPTURE_AGAIN:
+        # Mensajes al cliente
         print("No pudiste capturar a" , pokemon.get('name', ''), ".")
         print("Te queda(n)", response[2], "intento(s).\n")
-        quiere_pokemon = str(input("¿Quieres intentar capturar a " + pokemon.get('name', '') + " de nuevo? "))
-        capturar_pokemon_ = quiere_pokemon == 'si' #30
-        if not capturar_pokemon:
+        quiere_pokemon = 'si' == str(input("¿Quieres intentar capturar a " + pokemon.get('name', '') + " de nuevo? "))
+        if not quiere_pokemon:
             data = get_code_bytes(BOTH_NO)
-            print("¡Nos vemos entrenador!")
             sock.send(data)
+            print("¡Nos vemos entrenador!")
             return None
         data = get_code_bytes(BOTH_YES)
         sock.send(data)
@@ -98,9 +112,10 @@ def capturar_pokemon(sock):
     elif response[0] == SERVER_RUN_OUT_ATTEMPTS:
         print("Se acabaron los Intentos :(")
         print("¡Nos vemos entrenador!")
+    elif check_if_the_connection_is_closed(response[0]):
+        print("El servidor cerró la conexión")
     else:
         print("Sucedió un error :(")
-    sock.close()
     return None
 
 
@@ -109,6 +124,6 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 host = str(input("Server hostname o ip? "))
 port = int(input("Server port? "))
 sock.connect((host, port))
-connect_to_server(sock)
-capturar_pokemon(sock)
+trainer = connect_to_server(sock)
+capturar_pokemon(sock, trainer)
 sock.close()
