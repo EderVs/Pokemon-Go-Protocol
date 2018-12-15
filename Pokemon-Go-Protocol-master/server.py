@@ -65,21 +65,21 @@ class ThreadServer(object):
             client.settimeout(5)
             threading.Thread(target = self.listenToClient, args = (client, address)).start()
 
+    def close_connection(self, client):
+        print(client.getpeername()[0] + ':' + str(client.getpeername()[1]), 'se desconecto')
+        client.close()
+
 
     def connect_trainer(self, client, address):
         b_code = client.recv(2)
-        print(b_code)
         code = b_code[0]
         if code != CLIENT_CAPTURE:
             client.send(get_code_bytes(ERROR_WRONG_CODE))
             return {}
         trainer_id = b_code[1]
         trainer = get_trainer(trainer_id)
-        if trainer == {}: 
-            client.send(get_code_bytes(ERROR_WRONG_CODE))
         return trainer
 
-    
     def image_size_to_bytes(self, size):
         b_array = []
         while size >= 256:
@@ -92,7 +92,6 @@ class ThreadServer(object):
             b += b'\x00'
         b += bytes(b_array)
         return b
-        
 
     def data_to_send_pokemon(self, pokemon):
         path = "pokemons/" + pokemon["name"] + ".jpg"
@@ -104,7 +103,6 @@ class ThreadServer(object):
         data += f.read()
         f.close()
         return data
-
 
     def capture_pokemon(self, client, address):
         pokemon_to_capture = pokemons[randint(1, len((pokemons.keys())))]
@@ -145,24 +143,26 @@ class ThreadServer(object):
     def listenToClient(self, client, address):
         size = 1024
         try:
+            print(client.getpeername()[0] + ':' + str(client.getpeername()[1]), 'se ha conectado')
             trainer = self.connect_trainer(client, address)
-            print(trainer)
             if trainer == {}:
-                client.close()
+                data = get_code_bytes(ERROR_WRONG_TRAINER)
+                client.send(data)
+                self.close_connection(client)
                 return False
+            print(trainer)
             pokemon = self.capture_pokemon(client, address)
             if pokemon != {}:
                 print("!Se capturó!: ", pokemon)
                 trainer['pokemons'].append(pokemon)
                 print("Pokemones de",trainer['name'],": ",trainer['pokemons'])
-            client.close()
-            print("Se ha cerrado la conexión con el cliente.")
+            self.close_connection(client)
             return True
         except socket.timeout:
             print("Se acabó el tiempo")
             data = get_code_bytes(ERROR_CONNECTION_CLOSED)
             client.send(data)
-            client.close()
+            self.close_connection(client)
             return False
 
 

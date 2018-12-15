@@ -62,6 +62,7 @@ def check_if_the_connection_is_closed(code):
     
 def capturar_pokemon(sock, trainer):
     response = sock.recv(2)
+    print(response[0])
     if response[0] != SERVER_CAPTURE: #code 20
         if check_if_the_connection_is_closed(response[0]):
             print("El servidor cerró la conexión")
