@@ -1,0 +1,18 @@
+.\" Manpage for client.
+.TH man 8 "16 Dec 2018" "1.0" "client man page"
+.SH NAME
+client \- Aplicaccion de cliente que simula la captura de Pokemons.
+.SH SYNOPSIS
+.B client
+.SH DESCRIPTION
+Se le solicitará al usuario una dirección ip para conectarse a un host (escribir 'localhost', o ningún argumento para referirse al 'localhost'), y el puerto por el que se realizará la conexión, el cual deberá ser el 9999.
+.SH OPTIONS
+No tiene.
+.SH BUGS
+Desconocidos.
+.SH AUTHORS
+Vazquez Salcedo Eduardo Eder. (eder.vs@ciencias.unam.mx) 
+.br
+Mendez Servin Melissa. (mel.mendez@ciencias.unam.mx)
+.br
+Sanchez Perez Pedro Juan Salvador. (pedro_merolito@ciencias.unam.mx) 

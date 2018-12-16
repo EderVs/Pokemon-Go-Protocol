@@ -1,0 +1,17 @@
+.\" Manpage for pokemon_client.
+.TH man 8 "16 Dec 2018" "1.0" "server man page".SH NAME
+pokemon_server \- Aplicaccion de servidor que simula la captura de los Pokemons de los clientes.
+.SH SYNOPSIS
+.B server
+.SH DESCRIPTION
+El servidor acepta unicamente conexiones en el puerto 9999, el cual será solicitado.
+.SH OPTIONS
+No tiene.
+.SH BUGS
+Desconocidos.
+.SH AUTHORS
+Vazquez Salcedo Eduardo Eder. (eder.vs@ciencias.unam.mx) 
+.br
+Mendez Servin Melissa. (mel.mendez@ciencias.unam.mx)
+.br
+Sanchez Perez Pedro Juan Salvador. (pedro_merolito@ciencias.unam.mx) 
