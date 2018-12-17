@@ -1,3 +1,4 @@
+#-*- encoding: utf-8 -*-
 """
     Pokemon Go Protocol Client
 """
@@ -50,7 +51,11 @@ def get_pokemon(pokemon_id):
 def connect_to_server(sock):
     code = 10
     data = get_code_bytes(code)
-    id_trainer = int(input('¿Qué entrenador eres?:'))
+    try:
+        id_trainer = int(input('¿Qué entrenador eres? (Introduce tu número de id de entrenador):'))
+    except ValueError:
+        print('Se debe de ingresar el entero del id del entrenado')
+        raise Exception
     data += get_code_bytes(id_trainer)
     sock.send(data)
     return trainers.get(id_trainer, {})
@@ -62,7 +67,6 @@ def check_if_the_connection_is_closed(code):
     
 def capturar_pokemon(sock, trainer):
     response = sock.recv(2)
-    print(response[0])
     if response[0] != SERVER_CAPTURE: #code 20
         if check_if_the_connection_is_closed(response[0]):
             print("El servidor cerró la conexión")
@@ -96,11 +100,11 @@ def capturar_pokemon(sock, trainer):
             sock.send(data)
             print("¡Nos vemos entrenador!")
             return None
-        data = get_code_bytes(BOTH_YES)
+        data = get_code_bytes(both_yes)
         sock.send(data)
         response = sock.recv(3)
     if response[0] == SERVER_SEND_POKEMON:
-        print("!"+pokemon.get('name', ''), "capturado!")
+        print("¡"+pokemon.get('name', ''), "capturado!")
         # Gets the size of the file
         size = bytes_to_int(response[2:3] + sock.recv(3))
         # Receives the file bytes
@@ -120,11 +124,44 @@ def capturar_pokemon(sock, trainer):
     return None
 
 
+def welcome():
+    logo = """
+                                          ,'\\
+    _.----.        ____         ,'  _\   ___    ___     ____
+_,-'       `.     |    |  /`.   \,-'    |   \  /   |   |    \  |`.
+\      __    \    '-.  | /   `.  ___    |    \/    |   '-.   \ |  |
+ \.    \ \   |  __  |  |/    ,','_  `.  |          | __  |    \|  |
+   \    \/   /,' _`.|      ,' / / / /   |          ,' _`.|     |  |
+    \     ,-'/  /   \    ,'   | \/ / ,`.|         /  /   \  |     |
+     \    \ |   \_/  |   `-.  \    `'  /|  |    ||   \_/  | |\    |
+      \    \ \      /       `-.`.___,-' |  |\  /| \      /  | |   |
+       \    \ `.__,'|  |`-._    `|      |__| \/ |  `.__,'|  | |   |
+        \_.-'       |__|    `-._ |              '-.|     '-.| |   |
+                                `'                            '-._|
+    """
+    print(logo)
+    print("¡Bienvenido!")
+    print()
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host = str(input("Server hostname o ip? "))
-port = int(input("Server port? "))
-sock.connect((host, port))
-trainer = connect_to_server(sock)
-capturar_pokemon(sock, trainer)
-sock.close()
+
+if __name__ == "__main__":
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    host = str(input("¿Cuál es el hostname o ip del servidor? "))
+    # Always tries to connect to the port 9999
+    port = 9999
+    try:
+        sock.connect((host, port))
+    except:
+        print("No se pudo conectar con el servidor")
+
+    welcome()
+
+    try:
+        trainer = connect_to_server(sock)
+        capturar_pokemon(sock, trainer)
+    except:
+        print("Sucedió un error. Se cerrará la conexión.")
+        data = get_code_bytes(ERROR_CONNECTION_CLOSED)
+        sock.send(data)
+    finally:
+        sock.close()
