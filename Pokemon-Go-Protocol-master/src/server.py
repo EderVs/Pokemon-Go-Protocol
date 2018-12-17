@@ -35,7 +35,8 @@ BOTH_FINISH = 32
 ERROR_WRONG_CODE = 40
 ERROR_WRONG_TRAINER = 41
 ERROR_CONNECTION_CLOSED = 42
-numAttemps = 3
+# Seconds until a timeout
+TIMEOUT_VAR = 15
 
 
 def get_code_bytes(code):
@@ -62,7 +63,7 @@ class ThreadServer(object):
         self.sock.listen(5)
         while True:
             client, address = self.sock.accept()
-            client.settimeout(5)
+            client.settimeout(TIMEOUT_VAR)
             threading.Thread(target = self.listenToClient, args = (client, address)).start()
 
     def close_connection(self, client):
@@ -122,11 +123,11 @@ class ThreadServer(object):
         if self.check_if_the_connection_is_closed(response[0]):
             self.print_socket_message(client, "Se cerró la conexión del lado del cliente")
             return {}
-        actual_num_attemps = numAttemps
+        actual_num_attemps = randint(2, 5)
         while response[0] == BOTH_YES and actual_num_attemps > 0 :
-            # Get in a random way if the pokemon is captured
+            # Gets in a random way if the pokemon is captured
             catch_pokemon = randint(0,100)
-            if True or catch_pokemon < 30: 
+            if catch_pokemon < 30: 
                 # Gets the data to send when the client captures a pokemon
                 data = self.data_to_send_pokemon(pokemon_to_capture)
                 client.send(data)

@@ -108,3 +108,4 @@ venv.bak/
 
 # Pokemon images of client
 /Pokemon-Go-Protocol-master/client_pokemons/*.jpg
+/Pokemon-Go-Protocol-master/src/client_pokemons/*.jpg

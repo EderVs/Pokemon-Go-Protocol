@@ -100,7 +100,7 @@ def capturar_pokemon(sock, trainer):
             sock.send(data)
             print("¡Nos vemos entrenador!")
             return None
-        data = get_code_bytes(both_yes)
+        data = get_code_bytes(BOTH_YES)
         sock.send(data)
         response = sock.recv(3)
     if response[0] == SERVER_SEND_POKEMON:
