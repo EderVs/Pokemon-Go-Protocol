@@ -102,7 +102,7 @@ def capture_pokemon(sock, trainer):
     print("¡Bienvenido", trainer['name'],"!")
 
     pokemon = get_pokemon(response[1])
-    quiere_pokemon = 'si' ==  str(input("¿Quieres capturar a " + pokemon.get('name', '') + "? "))
+    quiere_pokemon = 'si' ==  str(input("¿Quieres capturar a " + pokemon.get('name', '') + "? (si/no)  "))
     if not quiere_pokemon:
         data = get_code_bytes(BOTH_NO)
         print("¡Nos vemos entrenador!")
@@ -116,7 +116,7 @@ def capture_pokemon(sock, trainer):
         # Client messages
         print("No pudiste capturar a" , pokemon.get('name', ''), ".")
         print("Te queda(n)", response[2], "intento(s).\n")
-        quiere_pokemon = 'si' == str(input("¿Quieres intentar capturar a " + pokemon.get('name', '') + " de nuevo?(s/n)"))
+        quiere_pokemon = 'si' == str(input("¿Quieres intentar capturar a " + pokemon.get('name', '') + " de nuevo? (si/no)  "))
         if not quiere_pokemon:
             data = get_code_bytes(BOTH_NO)
             sock.send(data)
