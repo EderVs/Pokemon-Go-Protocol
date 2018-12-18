@@ -8,6 +8,7 @@ import threading
 from random import randint
 
 
+# Trainers availables
 trainers = {
     1: {'id': 1, 'name': 'ASH',   'pokemons': []},
     2: {'id': 2, 'name': 'SAMUS', 'pokemons': []},
@@ -15,6 +16,7 @@ trainers = {
     4: {'id': 4, 'name': 'SONIC', 'pokemons': []},
 }
 
+# Pokemons availables
 pokemons = {
     1: {'id': 1, 'name': 'Pikachu'},
     2: {'id': 2, 'name': 'Squirtle'},
@@ -24,6 +26,7 @@ pokemons = {
     6: {'id': 6, 'name': 'MewTwo'}
 }
 
+# Normal codes
 CLIENT_CAPTURE = 10
 SERVER_CAPTURE = 20
 SERVER_CAPTURE_AGAIN = 21
@@ -32,6 +35,7 @@ SERVER_RUN_OUT_ATTEMPTS = 23
 BOTH_YES = 30
 BOTH_NO = 31
 BOTH_FINISH = 32
+# Error codes
 ERROR_WRONG_CODE = 40
 ERROR_WRONG_TRAINER = 41
 ERROR_CONNECTION_CLOSED = 42
@@ -40,21 +44,38 @@ TIMEOUT_VAR = 15
 
 
 def get_code_bytes(code):
+    """ 
+        Changes a number less than 255 to a byte
+    """
     return bytes([code])
 
 
 def get_trainer(trainer_id):
+    """
+        Get a trainer by its id
+    """
     return trainers.get(trainer_id, {})
 
 
 def get_pokemon(pokemon_id):
+    """
+        Get a pokemon by its id
+    """
     return pokemons.get(pokemon_id, {})
 
 
 class ThreadServer(object):
+    """
+        Main server thread
+    """
+
     def __init__(self, host, port):
+        """
+            Constructor of the main server
+        """
         self.host = host
         self.port = port
+        # Creates the main socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((self.host, self.port))
@@ -62,18 +83,30 @@ class ThreadServer(object):
     def listen(self):
         self.sock.listen(5)
         while True:
+            # The server is always waiting for a new connection
             client, address = self.sock.accept()
+            # Setting the timeout
             client.settimeout(TIMEOUT_VAR)
+            # Creating a new thread for every new connection
             threading.Thread(target = self.listenToClient, args = (client, address)).start()
 
     def close_connection(self, client):
+        """
+            Closes a socket
+        """
         self.print_socket_message(client, 'se desconecto')
         client.close()
 
     def print_socket_message(self, client, message):
+        """
+            Prints a message with the ip and port of the socket
+        """
         print(client.getpeername()[0] + ':' + str(client.getpeername()[1]), message)
 
     def connect_trainer(self, client, address):
+        """
+            Connects a trainer
+        """
         b_code = client.recv(2)
         if self.check_if_the_connection_is_closed(b_code[0]):
             self.print_socket_message(client, "Se cerró la conexión del lado del cliente")
@@ -87,9 +120,15 @@ class ThreadServer(object):
         return trainer
 
     def check_if_the_connection_is_closed(self, code):
+        """
+            Verifies that the code sent is a connection closed
+        """
         return code == ERROR_CONNECTION_CLOSED
 
     def image_size_to_bytes(self, size):
+        """
+            Converts the size of an image in 4 bytes
+        """
         b_array = []
         while size >= 256:
             b_array.append(size % 256)
@@ -103,6 +142,9 @@ class ThreadServer(object):
         return b
 
     def data_to_send_pokemon(self, pokemon):
+        """
+            Gets the data to send of an image of a new pokemon
+        """
         path = "pokemons/" + pokemon["name"] + ".jpg"
         data = get_code_bytes(SERVER_SEND_POKEMON)
         data += get_code_bytes(pokemon['id'])
@@ -114,6 +156,9 @@ class ThreadServer(object):
         return data
 
     def capture_pokemon(self, client, address):
+        """
+            Does all the process of capturing a pokemon
+        """
         pokemon_to_capture = pokemons[randint(1, len((pokemons.keys())))]
         self.print_socket_message(client, "Pokemón que se quiere capturar: " +  pokemon_to_capture.get('name', "NONE"))
         data = get_code_bytes(SERVER_CAPTURE)
@@ -124,6 +169,7 @@ class ThreadServer(object):
             self.print_socket_message(client, "Se cerró la conexión del lado del cliente")
             return {}
         actual_num_attemps = randint(2, 5)
+        # Does the process of capturing a pokemon with the number of attemps
         while response[0] == BOTH_YES and actual_num_attemps > 0 :
             # Gets in a random way if the pokemon is captured
             catch_pokemon = randint(0,100)
@@ -156,6 +202,9 @@ class ThreadServer(object):
             return {}
 
     def listenToClient(self, client, address):
+        """
+            Does all the client interaction
+        """
         size = 1024
         try:
             self.print_socket_message(client, 'se ha conectado')

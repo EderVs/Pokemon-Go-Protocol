@@ -4,6 +4,7 @@
 """
 import socket
 
+# Trainers available
 trainers = {
     1: {'id': 1, 'name': 'ASH',   'pokemons': []},
     2: {'id': 2, 'name': 'SAMUS', 'pokemons': []},
@@ -11,6 +12,7 @@ trainers = {
     4: {'id': 4, 'name': 'SONIC', 'pokemons': []},
 }
 
+# Pokemons available
 pokemons = {
     1: {'id': 1, 'name': 'Pikachu'},
     2: {'id': 2, 'name': 'Squirtle'},
@@ -20,6 +22,7 @@ pokemons = {
     6: {'id': 6, 'name': 'MewTwo'}
 }
 
+# Normal codes
 CLIENT_CAPTURE = 10
 SERVER_CAPTURE = 20
 SERVER_CAPTURE_AGAIN = 21
@@ -28,16 +31,23 @@ SERVER_RUN_OUT_ATTEMPTS = 23
 BOTH_YES = 30
 BOTH_NO = 31
 BOTH_FINISH = 32
+# Error codes
 ERROR_WRONG_CODE = 40
 ERROR_WRONG_TRAINER = 41
 ERROR_CONNECTION_CLOSED = 42
 
 
 def get_code_bytes(code):
+    """ 
+        Changes a number less than 255 to a byte
+    """
     return bytes([code])
 
 
 def bytes_to_int(bytes):
+    """
+        Converts the bytes sent to an int
+    """
     result = 0
     for b in bytes:
         result = result * 256 + int(b)
@@ -45,10 +55,16 @@ def bytes_to_int(bytes):
 
 
 def get_pokemon(pokemon_id):
+    """
+        Get a pokemon by its id
+    """
     return pokemons.get(pokemon_id, {})
 
 
 def connect_to_server(sock):
+    """
+        Does the connection with the server
+    """
     code = 10
     data = get_code_bytes(code)
     try:
@@ -62,10 +78,16 @@ def connect_to_server(sock):
 
 
 def check_if_the_connection_is_closed(code):
+    """
+        Cheks if the code received is an Connection closed
+    """
     return code == ERROR_CONNECTION_CLOSED
     
     
-def capturar_pokemon(sock, trainer):
+def capture_pokemon(sock, trainer):
+    """
+        Does all the process of capturing a pokemon
+    """
     response = sock.recv(2)
     if response[0] != SERVER_CAPTURE: #code 20
         if check_if_the_connection_is_closed(response[0]):
@@ -91,7 +113,7 @@ def capturar_pokemon(sock, trainer):
     sock.send(data)
     response = sock.recv(3)
     while response[0] == SERVER_CAPTURE_AGAIN:
-        # Mensajes al cliente
+        # Client messages
         print("No pudiste capturar a" , pokemon.get('name', ''), ".")
         print("Te queda(n)", response[2], "intento(s).\n")
         quiere_pokemon = 'si' == str(input("¿Quieres intentar capturar a " + pokemon.get('name', '') + " de nuevo? "))
@@ -158,7 +180,7 @@ if __name__ == "__main__":
 
     try:
         trainer = connect_to_server(sock)
-        capturar_pokemon(sock, trainer)
+        capture_pokemon(sock, trainer)
     except:
         print("Sucedió un error. Se cerrará la conexión.")
         data = get_code_bytes(ERROR_CONNECTION_CLOSED)
